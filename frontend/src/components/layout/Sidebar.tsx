@@ -17,6 +17,7 @@ import {
   Pin,
   PinOff,
   Monitor,
+  ChevronDown,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'centrus-sidebar-pinned';
@@ -149,9 +150,8 @@ export default function Sidebar() {
   const [pinned, setPinned] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
-  const submenuTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -170,20 +170,17 @@ export default function Sidebar() {
   }, [pinned, hydrated]);
 
   const expanded = pinned || hovered;
+  
+  const toggleAccordion = (itemName: string) => {
+    // If sidebar is collapsed, expand it first
+    if (!expanded) {
+      setHovered(true);
+    }
+    setOpenAccordion(prev => prev === itemName ? null : itemName);
+  };
 
   // Prevent flash: render expanded on SSR, then apply stored state after hydration
   const sidebarWidth = !hydrated ? 'w-64' : expanded ? 'w-64' : 'w-[68px]';
-
-  const handleItemMouseEnter = (itemName: string) => {
-    if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
-    setActiveSubmenu(itemName);
-  };
-
-  const handleItemMouseLeave = () => {
-    submenuTimeout.current = setTimeout(() => {
-      setActiveSubmenu(null);
-    }, 100);
-  };
 
   return (
     <aside
@@ -199,7 +196,10 @@ export default function Sidebar() {
       }}
       onMouseLeave={() => {
         if (!pinned) {
-          hoverTimeout.current = setTimeout(() => setHovered(false), 250);
+          hoverTimeout.current = setTimeout(() => {
+            setHovered(false);
+            setOpenAccordion(null); // Close accordion when sidebar collapses
+          }, 250);
         }
       }}
     >
@@ -246,80 +246,94 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-2 flex flex-col gap-1 relative">
+      <div className="flex-1 overflow-y-auto py-4 px-2 flex flex-col gap-1 relative custom-scrollbar">
         {navItems.map((item) => {
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+          const isAccordionOpen = openAccordion === item.name;
           const isActive = pathname === item.href || (item.subItems?.some(si => pathname === si.href));
-          const isSubmenuOpen = activeSubmenu === item.name;
           const Icon = item.icon;
 
           return (
-            <div
-              key={item.name}
-              className="relative group/nav-item"
-              onMouseEnter={() => handleItemMouseEnter(item.name)}
-              onMouseLeave={handleItemMouseLeave}
-            >
-              <Link
-                href={item.href}
-                title={!expanded ? item.name : undefined}
-                className={`
-                  flex items-center gap-3 rounded-lg transition-colors text-sm font-medium relative
-                  ${expanded ? 'px-3 py-2' : 'px-0 py-2 justify-center'}
-                  ${isActive
-                    ? 'bg-primary-light text-primary'
-                    : 'text-text-muted hover:bg-gray-100 hover:text-text-main'
-                  }
-                `.trim()}
-              >
-                <Icon
-                  className="w-5 h-5 flex-shrink-0"
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                {expanded && <span className="truncate whitespace-nowrap">{item.name}</span>}
-                
-                {/* Active Indicator Bar */}
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
-                )}
-              </Link>
-
-              {/* Floating Submenu */}
-              {isSubmenuOpen && item.subItems && item.subItems.length > 0 && (
-                <div
+            <div key={item.name} className="flex flex-col gap-1">
+              {/* Main Item */}
+              {hasSubItems ? (
+                <button
+                  onClick={() => toggleAccordion(item.name)}
                   className={`
-                    fixed left-[68px] ${expanded ? 'left-[256px]' : 'left-[68px]'} 
-                    top-0 bottom-0 w-64 bg-surface border-r border-border-subtle
-                    shadow-2xl z-40 p-4 flex flex-col gap-1 transition-all duration-200 animate-in fade-in slide-in-from-left-2
+                    w-full flex items-center gap-3 rounded-lg transition-colors text-sm font-medium relative group cursor-pointer
+                    ${expanded ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'}
+                    ${isActive
+                      ? 'bg-primary-light text-primary'
+                      : 'text-text-muted hover:bg-gray-100 hover:text-text-main'
+                    }
                   `.trim()}
-                  style={{ 
-                    top: '64px', // Align with main content top (header height)
-                    height: 'calc(100vh - 64px)' 
-                  }}
-                  onMouseEnter={() => {
-                    if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
-                  }}
-                  onMouseLeave={handleItemMouseLeave}
                 >
-                  <div className="mb-4">
-                    <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                      {item.name}
-                    </h3>
-                    <div className="h-px bg-border-subtle w-full" />
-                  </div>
+                  <Icon
+                    className="w-5 h-5 flex-shrink-0"
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {expanded && (
+                    <>
+                      <span className="truncate whitespace-nowrap flex-1 text-left">{item.name}</span>
+                      <ChevronDown 
+                        className={`w-4 h-4 transition-transform duration-200 ${isAccordionOpen ? 'rotate-180' : ''}`} 
+                      />
+                    </>
+                  )}
+                  {isActive && !expanded && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                  )}
+                </button>
+              ) : (
+                <Link
+                  href={item.href}
+                  title={!expanded ? item.name : undefined}
+                  className={`
+                    flex items-center gap-3 rounded-lg transition-colors text-sm font-medium relative group
+                    ${expanded ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'}
+                    ${isActive
+                      ? 'bg-primary-light text-primary'
+                      : 'text-text-muted hover:bg-gray-100 hover:text-text-main'
+                    }
+                  `.trim()}
+                >
+                  <Icon
+                    className="w-5 h-5 flex-shrink-0"
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {expanded && <span className="truncate whitespace-nowrap">{item.name}</span>}
+                  {isActive && !expanded && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                  )}
+                </Link>
+              )}
 
-                  <div className="flex flex-col gap-1 overflow-y-auto">
-                    {item.subItems.map((subItem) => (
+              {/* Accordion Sub-menu */}
+              {expanded && hasSubItems && (
+                <div 
+                  className={`
+                    overflow-hidden transition-all duration-300 ease-in-out
+                    ${isAccordionOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}
+                  `}
+                >
+                  <div className="flex flex-col gap-1 pl-10 pr-2 pb-1 mt-1">
+                    {item.subItems!.map((subItem) => (
                       <Link
                         key={subItem.name}
                         href={subItem.href}
                         className={`
-                          px-3 py-2 rounded-md text-sm transition-all
+                          px-3 py-2 rounded-md text-sm transition-all relative
                           ${pathname === subItem.href
-                            ? 'bg-primary-light text-primary font-semibold'
-                            : 'text-text-muted hover:bg-gray-100 hover:text-text-main'
+                            ? 'text-primary font-bold'
+                            : 'text-text-muted hover:text-text-main hover:bg-gray-50'
                           }
                         `.trim()}
                       >
+                        {/* Bullet point for sub-items */}
+                        <div className={`
+                          absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full border border-current opacity-40
+                          ${pathname === subItem.href ? 'bg-primary opacity-100' : ''}
+                        `} />
                         {subItem.name}
                       </Link>
                     ))}
