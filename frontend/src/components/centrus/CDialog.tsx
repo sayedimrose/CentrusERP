@@ -7,6 +7,7 @@ export interface CDialogButton {
   label: string;
   onClick: () => void;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
+  disabled?: boolean;
 }
 
 export interface CDialogProps {
@@ -62,6 +63,7 @@ export default function CDialog({
                 variant={btn.variant || 'outline'}
                 size="sm"
                 onClick={btn.onClick}
+                disabled={btn.disabled}
               >
                 {btn.label}
               </CButton>

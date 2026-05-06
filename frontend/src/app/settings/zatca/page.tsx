@@ -1,171 +1,239 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck, 
-  Settings2, 
+  Plus, 
+  Search, 
   Key, 
-  FileCheck, 
-  AlertCircle, 
-  RefreshCw, 
-  ExternalLink,
-  Info,
   Lock,
-  Globe
+  Globe,
+  FileCheck,
+  MoreVertical,
+  Filter,
+  RefreshCcw,
+  Download,
+  Upload,
+  Settings2,
+  FileText,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Activity,
+  Server
 } from 'lucide-react';
 import { 
   CCard, 
   CButton, 
-  CInput, 
-  CSectionHeader, 
   CBadge,
-  CSelect
+  CIconBadge,
+  CDropdownMenu,
+  CDataTable,
+  CFilterSidebar,
+  FilterGroup,
+  CDialog,
+  CToast,
+  useToasts,
+  CInput,
+  CSelect,
+  CTextarea,
+  CPageTitle
 } from '@/components/centrus';
+import { ColumnDef } from '@tanstack/react-table';
 
-export default function ZatcaSettingsPage() {
-  const [env, setEnv] = useState('SANDBOX');
-  const [loading, setLoading] = useState(false);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <CSectionHeader 
-          title="ZATCA E-Invoicing (FATOORA)" 
-          subtitle="Onboard and manage your E-Invoicing Phase 2 integration with KSA Tax Authority"
-        />
-        <div className="flex gap-2">
-          <CButton variant="outline" icon={ExternalLink}>ZATCA Portal</CButton>
-          <CButton icon={RefreshCw}>Check Status</CButton>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Onboarding Status */}
-        <div className="lg:col-span-2 space-y-6">
-          <CCard title="Onboarding Status" icon={ShieldCheck}>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 bg-primary-light/30 border border-primary/10 rounded-2xl mb-4">
-              <div className="flex gap-4">
-                <div className="p-3 bg-white rounded-xl shadow-sm text-primary">
-                  <Globe className="w-8 h-8" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-text-main">Production Ready</h4>
-                  <p className="text-sm text-text-muted">Environment: <span className="font-bold text-primary">{env}</span></p>
-                </div>
-              </div>
-              <CBadge variant="success" className="text-sm py-1 px-3">ACTIVE & COMPLIANT</CBadge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div className="p-4 border border-border-subtle rounded-xl space-y-2">
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">CSID Status</span>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-text-main">Production CSID</span>
-                  <CBadge variant="success">VALID</CBadge>
-                </div>
-                <p className="text-[10px] text-text-muted">Expires in 720 days</p>
-              </div>
-              <div className="p-4 border border-border-subtle rounded-xl space-y-2">
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">Compliance Cert</span>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-text-main">X.509 Certificate</span>
-                  <CBadge variant="success">ISSUED</CBadge>
-                </div>
-                <p className="text-[10px] text-text-muted">Fingerprint: 8F:92:A1...3C</p>
-              </div>
-            </div>
-          </CCard>
-
-          <CCard title="Registration & Onboarding" icon={Settings2}>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <CSelect 
-                  label="Environment Selection"
-                  options={[
-                    { label: 'Sandbox (Testing)', value: 'SANDBOX' },
-                    { label: 'Simulation (Pre-prod)', value: 'SIMULATION' },
-                    { label: 'Production (Live)', value: 'PRODUCTION' },
-                  ]}
-                  value={env}
-                  onChange={(e) => setEnv(e.target.value)}
-                />
-                <CInput 
-                  label="OTP (from FATOORA Portal)" 
-                  placeholder="Enter 6-digit OTP" 
-                  maxLength={6}
-                  icon={Key}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <h4 className="text-sm font-bold text-text-main">Onboarding Steps</h4>
-                <div className="space-y-2">
-                  <StepItem number="1" title="Generate CSR" description="Create a Cryptographic Signing Request for your company." status="completed" />
-                  <StepItem number="2" title="Onboard Device" description="Submit OTP and CSR to ZATCA to receive your CSID." status="completed" />
-                  <StepItem number="3" title="Compliance Test" description="Pass the mandatory 20+ invoice test scenarios." status="completed" />
-                  <StepItem number="4" title="Production Activation" description="Switch to production environment for live e-invoicing." status="current" />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
-                <CButton variant="outline">Reset Configuration</CButton>
-                <CButton icon={ShieldCheck}>Begin Onboarding</CButton>
-              </div>
-            </div>
-          </CCard>
-        </div>
-
-        {/* Security & Info */}
-        <div className="space-y-6">
-          <CCard title="Security Keys" icon={Lock}>
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">Private Key</span>
-                <div className="flex gap-2">
-                  <CInput value="••••••••••••••••••••••••••••••••" disabled className="flex-1 !mb-0" />
-                  <CButton variant="outline" size="sm" icon={RefreshCw} className="px-2" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">Public Key</span>
-                <div className="p-3 bg-gray-50 rounded-lg border border-border-subtle overflow-hidden">
-                  <p className="text-[10px] font-mono break-all text-text-muted">
-                    -----BEGIN PUBLIC KEY-----
-                    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7V...
-                    -----END PUBLIC KEY-----
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CCard>
-
-          <div className="p-5 bg-amber-50 border border-amber-100 rounded-2xl flex gap-4">
-            <div className="p-2 bg-amber-100 rounded-lg text-amber-600 h-fit">
-              <AlertCircle className="w-5 h-5" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-amber-900">Legal Requirement</h4>
-              <p className="text-xs text-amber-800 leading-relaxed">
-                As per ZATCA regulations, all B2B and B2C transactions must be reported or cleared through the FATOORA portal. Tampering with certificates is a legal offense.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface ZatcaConfig {
+  id: string;
+  environment: 'SANDBOX' | 'SIMULATION' | 'PRODUCTION';
+  csid_status: 'Active' | 'Revoked' | 'Pending';
+  compliance_level: 'Phase 1' | 'Phase 2';
+  last_sync: string;
+  organization_unit: string;
 }
 
-function StepItem({ number, title, description, status }: { number: string, title: string, description: string, status: 'completed' | 'current' | 'pending' }) {
+const MOCK_ZATCA: ZatcaConfig[] = [
+  { id: '1', environment: 'PRODUCTION', csid_status: 'Active', compliance_level: 'Phase 2', last_sync: '2026-05-06 09:12', organization_unit: 'Main Headquarters' },
+  { id: '2', environment: 'SANDBOX', csid_status: 'Active', compliance_level: 'Phase 2', last_sync: '2026-05-04 14:30', organization_unit: 'Development Testing' },
+  { id: '3', environment: 'SIMULATION', csid_status: 'Revoked', compliance_level: 'Phase 2', last_sync: '2026-04-20 10:00', organization_unit: 'Riyadh Branch' },
+];
+
+export default function ZatcaSettingsPage() {
+  const [showFilters, setShowFilters] = useState(true);
+  const [rowSelection, setRowSelection] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<ZatcaConfig | null>(null);
+
+  const { toasts, addToast, removeToast } = useToasts();
+  const selectedCount = Object.keys(rowSelection).length;
+
+  const handleAddSubmit = () => {
+    const mode = selectedConfig ? 'updated' : 'initialized';
+    addToast(`ZATCA integration ${mode} successfully!`, 'success');
+    setIsModalOpen(false);
+    setSelectedConfig(null);
+  };
+
+  const handleEdit = (config: ZatcaConfig) => {
+    setSelectedConfig(config);
+    setIsModalOpen(true);
+  };
+
+  const zatcaFilters: FilterGroup[] = [
+    { id: 'env', title: 'Environment', options: [{ label: 'PRODUCTION', count: 1 }, { label: 'SANDBOX', count: 1 }, { label: 'SIMULATION', count: 1 }] },
+    { id: 'status', title: 'CSID Status', options: [{ label: 'Active', count: 2 }, { label: 'Revoked', count: 1 }] },
+  ];
+
+  const columns = useMemo<ColumnDef<ZatcaConfig>[]>(() => [
+    { 
+      accessorKey: 'environment', 
+      header: 'Environment', 
+      cell: info => (
+        <div className="flex items-center gap-2">
+          {info.getValue() === 'PRODUCTION' ? <Server className="w-3.5 h-3.5 text-red-500" /> : <Globe className="w-3.5 h-3.5 text-blue-500" />}
+          <span className={`text-xs font-bold ${info.getValue() === 'PRODUCTION' ? 'text-red-600' : 'text-blue-600'}`}>
+            {info.getValue() as string}
+          </span>
+        </div>
+      ),
+      size: 150 
+    },
+    { accessorKey: 'organization_unit', header: 'Org Unit', cell: info => <span className="font-medium text-text-main text-xs">{info.getValue() as string}</span>, size: 200 },
+    { 
+      accessorKey: 'csid_status', 
+      header: 'CSID Status', 
+      cell: info => (
+        <CBadge variant={info.getValue() === 'Active' ? 'success' : info.getValue() === 'Revoked' ? 'danger' : 'default'} size="sm">
+          {info.getValue() as string}
+        </CBadge>
+      ),
+      size: 120 
+    },
+    { accessorKey: 'compliance_level', header: 'Compliance', cell: info => <CBadge variant="primary" size="sm">{info.getValue() as string}</CBadge>, size: 120 },
+    { accessorKey: 'last_sync', header: 'Last Sync', cell: info => <span className="text-text-muted text-xs font-mono">{info.getValue() as string}</span>, size: 180 },
+    { accessorKey: 'id', header: 'ID', cell: info => <span className="text-text-muted text-[10px] font-mono">{info.getValue() as string}</span>, size: 150 },
+  ], []);
+
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${status === 'current' ? 'bg-primary/5 border-primary/20 ring-1 ring-primary/20' : 'bg-white border-border-subtle'}`}>
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${status === 'completed' ? 'bg-green-100 text-green-600' : status === 'current' ? 'bg-primary text-white' : 'bg-gray-100 text-text-muted'}`}>
-        {status === 'completed' ? <FileCheck className="w-3.5 h-3.5" /> : number}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h5 className={`text-xs font-bold ${status === 'pending' ? 'text-text-muted' : 'text-text-main'}`}>{title}</h5>
-        <p className="text-[10px] text-text-muted">{description}</p>
-      </div>
+    <div className="flex flex-col gap-6 h-full">
+      <CToast toasts={toasts} onRemove={removeToast} />
+
+      <CDialog
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setSelectedConfig(null); }}
+        title={selectedConfig ? "Update ZATCA CSID / Certificate" : "New ZATCA Onboarding"}
+        icon={selectedConfig ? <Lock className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+        buttons={[
+          { label: 'Cancel', onClick: () => { setIsModalOpen(false); setSelectedConfig(null); }, variant: 'outline' },
+          { label: selectedConfig ? 'Update Integration' : 'Initialize Onboarding', onClick: handleAddSubmit, variant: 'primary' },
+        ]}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <CSelect 
+              label="Environment" 
+              options={[
+                { label: 'Sandbox (Test)', value: 'SANDBOX' },
+                { label: 'Simulation', value: 'SIMULATION' },
+                { label: 'Production (Live)', value: 'PRODUCTION' }
+              ]} 
+              defaultValue={selectedConfig?.environment}
+              required 
+            />
+            <CInput label="Org Unit Name" placeholder="e.g. Riyadh Main Office" defaultValue={selectedConfig?.organization_unit} required />
+          </div>
+          <CInput label="OTP (from FATOORA Portal)" placeholder="6-digit OTP code" required icon={<Key className="w-4 h-4" />} />
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-text-muted uppercase px-1">Security Certificate (Base64)</label>
+            <CTextarea placeholder="Paste your X.509 certificate content here..." rows={4} className="font-mono text-[10px]" />
+          </div>
+          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[10px] text-blue-700 leading-relaxed">
+              ZATCA Phase 2 requires onboarding each EGS (Electronic Generating System) unit individually. 
+              Ensure you have generated the private key correctly before pasting the certificate.
+            </p>
+          </div>
+        </div>
+      </CDialog>
+
+      {/* Action Bar */}
+      <CCard padding="none" className="overflow-hidden flex flex-col min-h-[650px] shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-white">
+          <div className="flex items-center gap-4">
+            <CIconBadge
+              icon={<ShieldCheck className="w-4 h-4" />}
+              colorClass="bg-gray-100 text-text-muted"
+              shape="circle"
+              size="lg"
+            />
+            <CPageTitle>ZATCA Phase 2</CPageTitle>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <CButton
+              variant="outline"
+              size="sm"
+              icon={<Filter className="w-4 h-4" />}
+              onClick={() => setShowFilters(!showFilters)}
+              className={showFilters ? '!bg-primary-light !text-primary !border-primary/20 hover:!bg-primary-light/80' : ''}
+            >
+              <span className="hidden sm:inline">{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+            </CButton>
+
+            <CButton variant="outline" size="sm" icon={<RefreshCcw className="w-4 h-4" />} iconOnly />
+
+            <CDropdownMenu
+              label="Options"
+              align="right"
+              width="w-52"
+              groups={[
+                { items: [
+                  { label: 'Check API Status', icon: <Activity className="w-4 h-4" /> },
+                  { label: 'FATOORA Portal', icon: <Globe className="w-4 h-4" /> },
+                ]},
+                { items: [
+                  { label: 'Clear Cache', icon: <Trash2 className="w-4 h-4" />, danger: true },
+                ]},
+              ]}
+            />
+
+            <CButton
+              variant="primary"
+              size="md"
+              icon={<Plus className="w-4 h-4" />}
+              onClick={() => setIsModalOpen(true)}
+              className="ml-2"
+            >
+              New Onboarding
+            </CButton>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex flex-1 overflow-hidden p-4 bg-white gap-0">
+          {showFilters && <CFilterSidebar groups={zatcaFilters} />}
+          <div className="flex-1 overflow-y-auto">
+            <div className="mb-4 p-4 bg-green-50/50 border border-green-100 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div>
+                  <h3 className="text-sm font-bold text-green-900">System is ZATCA Compliant</h3>
+                  <p className="text-xs text-green-700">Phase 2 integration is active and all unit heartbeats are healthy.</p>
+                </div>
+              </div>
+              <CButton variant="outline" size="sm" className="bg-white">View Compliance Log</CButton>
+            </div>
+            
+            <CDataTable 
+              data={MOCK_ZATCA} 
+              columns={columns} 
+              rowSelection={rowSelection} 
+              onRowSelectionChange={setRowSelection} 
+              onRowClick={handleEdit}
+            />
+          </div>
+        </div>
+      </CCard>
     </div>
   );
 }

@@ -9,6 +9,10 @@ export interface CCardProps extends React.HTMLAttributes<HTMLDivElement> {
   rounded?: boolean;
   /** Column span for grid layouts */
   colSpan?: number;
+  /** Optional title */
+  title?: string;
+  /** Optional icon component */
+  icon?: React.ElementType;
 }
 
 const paddingClasses: Record<string, string> = {
@@ -23,6 +27,8 @@ export default function CCard({
   bordered = true,
   rounded = true,
   colSpan,
+  title,
+  icon: Icon,
   className = '',
   children,
   style,
@@ -41,6 +47,16 @@ export default function CCard({
       style={colSpan && colSpan > 1 ? { ...style, gridColumn: `span ${colSpan}` } : style}
       {...rest}
     >
+      {(title || Icon) && (
+        <div className={`flex items-center gap-2 mb-4 ${padding === 'none' ? 'px-5 pt-5' : ''}`}>
+          {Icon && (
+            <div className="p-1.5 rounded-lg bg-primary/5 text-primary">
+              {React.isValidElement(Icon) ? Icon : <Icon className="w-4 h-4" />}
+            </div>
+          )}
+          {title && <h3 className="font-semibold text-text-main text-sm">{title}</h3>}
+        </div>
+      )}
       {children}
     </div>
   );

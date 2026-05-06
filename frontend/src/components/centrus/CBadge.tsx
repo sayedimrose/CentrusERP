@@ -5,6 +5,7 @@ export type CBadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info
 export interface CBadgeProps {
   children: React.ReactNode;
   variant?: CBadgeVariant;
+  size?: 'sm' | 'md' | 'lg';
   /** Dot indicator before text */
   dot?: boolean;
   /** Custom dot color class */
@@ -31,9 +32,16 @@ const dotColors: Record<CBadgeVariant, string> = {
   primary:  'bg-primary',
 };
 
+const sizeClasses = {
+  sm: 'px-1.5 py-0.5 text-[10px]',
+  md: 'px-2 py-0.5 text-xs',
+  lg: 'px-2.5 py-1 text-sm',
+};
+
 export default function CBadge({
   children,
   variant = 'default',
+  size = 'md',
   dot = false,
   dotColor,
   className = '',
@@ -41,7 +49,8 @@ export default function CBadge({
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full
+        inline-flex items-center gap-1.5 font-medium rounded-full
+        ${sizeClasses[size]}
         ${variantClasses[variant]}
         ${className}
       `.trim()}

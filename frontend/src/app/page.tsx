@@ -6,7 +6,7 @@ import FilterSidebar from '@/components/ui/FilterSidebar';
 import {
   CButton, CCard, CKpiCard, CDropdownMenu, CDialog,
   CSectionHeader, CStatCard, CActivityItem, CBarChart,
-  CProgressBar, CAvatar, CIconBadge,
+  CProgressBar, CAvatar, CIconBadge, CPageTitle
 } from '@/components/centrus';
 import {
   LayoutList, FileText, LayoutDashboard, Calendar, RefreshCcw,
@@ -65,7 +65,7 @@ export default function Home() {
               shape="circle"
               size="lg"
             />
-            <h1 className="text-xl font-semibold text-text-main">Task</h1>
+            <CPageTitle>Task</CPageTitle>
           </div>
 
           <div className="flex items-center gap-2">

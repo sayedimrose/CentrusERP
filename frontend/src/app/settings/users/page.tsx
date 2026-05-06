@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   ShieldCheck, 
@@ -8,154 +8,295 @@ import {
   Search, 
   Shield, 
   Key, 
-  MoreHorizontal,
+  MoreVertical,
   Mail,
   Building,
-  Check,
-  X
+  Filter,
+  LayoutList,
+  RefreshCcw,
+  Download,
+  Upload,
+  Printer,
+  Trash2,
+  Archive,
+  Copy,
+  Settings2,
+  FileText,
+  Pencil
 } from 'lucide-react';
 import { 
   CCard, 
   CButton, 
-  CInput, 
-  CSectionHeader, 
   CBadge,
-  CAvatar
+  CAvatar,
+  CIconBadge,
+  CDropdownMenu,
+  CDataTable,
+  CFilterSidebar,
+  FilterGroup,
+  CDialog,
+  CToast,
+  useToasts,
+  CInput,
+  CSelect,
+  CTextarea,
+  CPageTitle
 } from '@/components/centrus';
+import { ColumnDef } from '@tanstack/react-table';
 
-const mockUsers = [
-  { id: 1, name: 'Sayed Abbas', email: 'sayed@centrus.sa', role: 'Super Admin', branch: 'All', status: 'Active', avatar: 'SA' },
-  { id: 2, name: 'Ahmed Khan', email: 'ahmed@centrus.sa', role: 'Branch Manager', branch: 'Riyadh Main', status: 'Active', avatar: 'AK' },
-  { id: 3, name: 'Sara Jones', email: 'sara@centrus.sa', role: 'Accountant', branch: 'Jeddah Coastal', status: 'Locked', avatar: 'SJ' },
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  branch: string;
+  status: 'Active' | 'Locked' | 'Inactive';
+  avatar: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  members: number;
+}
+
+const MOCK_USERS: User[] = [
+  { id: '1', name: 'Sayed Abbas', email: 'sayed@centrus.sa', role: 'Super Admin', branch: 'All', status: 'Active', avatar: 'SA' },
+  { id: '2', name: 'Ahmed Khan', email: 'ahmed@centrus.sa', role: 'Branch Manager', branch: 'Riyadh Main', status: 'Active', avatar: 'AK' },
+  { id: '3', name: 'Sara Jones', email: 'sara@centrus.sa', role: 'Accountant', branch: 'Jeddah Coastal', status: 'Locked', avatar: 'SJ' },
 ];
 
-const mockRoles = [
-  { id: 1, name: 'Super Admin', description: 'Full access to all system modules and settings.', members: 2 },
-  { id: 2, name: 'Branch Manager', description: 'Manage branch specific sales, inventory and employees.', members: 5 },
-  { id: 3, name: 'Accountant', description: 'Manage journal entries, vouchers and financial reports.', members: 3 },
-  { id: 4, name: 'Cashier', description: 'Restrict access to POS registers and daily reports.', members: 12 },
+const MOCK_ROLES: Role[] = [
+  { id: '1', name: 'Super Admin', description: 'Full access to all system modules and settings.', members: 2 },
+  { id: '2', name: 'Branch Manager', description: 'Manage branch specific sales, inventory and employees.', members: 5 },
+  { id: '3', name: 'Accountant', description: 'Manage journal entries, vouchers and financial reports.', members: 3 },
 ];
 
 export default function UsersRolesPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
+  const [showFilters, setShowFilters] = useState(true);
+  const [rowSelection, setRowSelection] = useState({});
+  
+  // Modal States
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <CSectionHeader 
-          title="Users & Access Control" 
-          subtitle="Manage system users, define roles, and configure granular permissions"
-        />
-        <CButton icon={Plus}>
-          {activeTab === 'users' ? 'Invite New User' : 'Create New Role'}
-        </CButton>
-      </div>
+  const { toasts, addToast, removeToast } = useToasts();
+  const selectedCount = Object.keys(rowSelection).length;
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
-        <button 
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'users' ? 'bg-white shadow-sm text-primary' : 'text-text-muted hover:bg-gray-200'}`}
-        >
-          <Users className="w-4 h-4" />
-          Users
-        </button>
-        <button 
-          onClick={() => setActiveTab('roles')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'roles' ? 'bg-white shadow-sm text-primary' : 'text-text-muted hover:bg-gray-200'}`}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          Roles & Permissions
-        </button>
-      </div>
+  const handleAddSubmit = () => {
+    const mode = (activeTab === 'users' ? selectedUser : selectedRole) ? 'updated' : 'created';
+    addToast(`${activeTab === 'users' ? 'User' : 'Role'} ${mode} successfully!`, 'success');
+    setIsUserModalOpen(false);
+    setIsRoleModalOpen(false);
+    setSelectedUser(null);
+    setSelectedRole(null);
+  };
 
-      {activeTab === 'users' ? (
-        <div className="space-y-4">
-          <CCard className="!p-4">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <CInput placeholder="Search users by name or email..." className="pl-10 !mb-0" />
-            </div>
-          </CCard>
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsUserModalOpen(true);
+  };
 
-          <CCard noPadding>
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-border-subtle bg-gray-50/50">
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">User</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Branch Access</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {mockUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <CAvatar label={user.avatar} size="sm" />
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-text-main">{user.name}</span>
-                          <span className="text-xs text-text-muted">{user.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <CBadge variant="neutral">{user.role}</CBadge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-text-muted">
-                        <Building className="w-3.5 h-3.5" />
-                        {user.branch}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <CBadge variant={user.status === 'Active' ? 'success' : 'danger'}>
-                        {user.status}
-                      </CBadge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="p-1.5 hover:bg-gray-100 rounded-md transition-colors">
-                        <MoreHorizontal className="w-4 h-4 text-text-muted" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CCard>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {mockRoles.map((role) => (
-            <CCard key={role.id} title={role.name} icon={Shield}>
-              <p className="text-sm text-text-muted mb-4 leading-relaxed">
-                {role.description}
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
-                <div className="flex items-center gap-1.5 text-xs text-text-muted font-medium">
-                  <Users className="w-4 h-4 text-primary" />
-                  {role.members} Users Assigned
-                </div>
-                <CButton variant="outline" size="sm" icon={Key}>
-                  Edit Permissions
-                </CButton>
-              </div>
-            </CCard>
-          ))}
-          
-          <div className="border-2 border-dashed border-border-subtle rounded-2xl flex flex-col items-center justify-center p-8 gap-3 group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
-            <div className="p-3 bg-gray-100 rounded-full group-hover:bg-primary-light group-hover:text-primary transition-colors">
-              <Shield className="w-8 h-8" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-bold text-text-main group-hover:text-primary transition-colors">Create Custom Role</h3>
-              <p className="text-xs text-text-muted">Define unique permission sets for specific staff</p>
-            </div>
+  const handleEditRole = (role: Role) => {
+    setSelectedRole(role);
+    setIsRoleModalOpen(true);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedCount === 0) return;
+    addToast(`${selectedCount} ${activeTab} deleted successfully!`, 'error');
+    setRowSelection({});
+  };
+
+  const userFilters: FilterGroup[] = [
+    { id: 'role', title: 'Role', options: [{ label: 'Super Admin', count: 1 }, { label: 'Branch Manager', count: 1 }, { label: 'Accountant', count: 1 }] },
+    { id: 'status', title: 'Status', options: [{ label: 'Active', count: 2 }, { label: 'Locked', count: 1 }] },
+  ];
+
+  const userColumns = useMemo<ColumnDef<User>[]>(() => [
+    { 
+      accessorKey: 'name', 
+      header: 'User', 
+      cell: info => (
+        <div className="flex items-center gap-3">
+          <CAvatar initials={info.row.original.avatar} size="sm" />
+          <div className="flex flex-col">
+            <span className="font-medium text-text-main leading-tight">{info.getValue() as string}</span>
+            <span className="text-[10px] text-text-muted">{info.row.original.email}</span>
           </div>
         </div>
-      )}
+      ),
+      size: 250 
+    },
+    { accessorKey: 'role', header: 'Role', cell: info => <span className="font-medium text-text-main text-xs">{info.getValue() as string}</span>, size: 150 },
+    { accessorKey: 'branch', header: 'Branch', cell: info => <span className="text-text-main text-xs">{info.getValue() as string}</span>, size: 150 },
+    { accessorKey: 'status', header: 'Status', cell: info => <CBadge variant={info.getValue() === 'Active' ? 'success' : info.getValue() === 'Locked' ? 'danger' : 'default'} size="sm">{info.getValue() as string}</CBadge>, size: 120 },
+    { accessorKey: 'id', header: 'ID', cell: info => <span className="text-text-muted text-xs font-mono">{info.getValue() as string}</span>, size: 150 },
+  ], []);
+
+  const roleColumns = useMemo<ColumnDef<Role>[]>(() => [
+    { accessorKey: 'name', header: 'Role Name', cell: info => <span className="font-medium text-text-main">{info.getValue() as string}</span>, size: 200 },
+    { accessorKey: 'description', header: 'Description', cell: info => <span className="text-xs text-text-muted truncate block max-w-[300px]">{info.getValue() as string}</span>, size: 400 },
+    { accessorKey: 'members', header: 'Users', cell: info => <CBadge variant="default" size="sm">{info.getValue() as number} Members</CBadge>, size: 120 },
+    { accessorKey: 'id', header: 'ID', cell: info => <span className="text-text-muted text-xs font-mono">{info.getValue() as string}</span>, size: 150 },
+  ], []);
+
+  return (
+    <div className="flex flex-col gap-6 h-full">
+      <CToast toasts={toasts} onRemove={removeToast} />
+
+      {/* User Modal */}
+      <CDialog
+        isOpen={isUserModalOpen}
+        onClose={() => { setIsUserModalOpen(false); setSelectedUser(null); }}
+        title={selectedUser ? "Edit User Details" : "Add New User"}
+        icon={selectedUser ? <Pencil className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+        buttons={[
+          { label: 'Cancel', onClick: () => { setIsUserModalOpen(false); setSelectedUser(null); }, variant: 'outline' },
+          { label: selectedUser ? 'Update Details' : 'Create User', onClick: handleAddSubmit, variant: 'primary' },
+        ]}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <CInput label="Full Name" placeholder="e.g. John Doe" defaultValue={selectedUser?.name} required />
+            <CInput label="Username" placeholder="e.g. johndoe" defaultValue={selectedUser?.id} required />
+          </div>
+          <CInput label="Email Address" type="email" placeholder="john@example.com" defaultValue={selectedUser?.email} required icon={<Mail className="w-4 h-4" />} />
+          <div className="grid grid-cols-2 gap-4">
+            <CSelect label="Role" options={[{ label: 'Super Admin', value: 'admin' }]} defaultValue={selectedUser?.role.toLowerCase()} required />
+            <CSelect label="Branch" options={[{ label: 'Riyadh Main', value: 'br1' }]} defaultValue={selectedUser?.branch.toLowerCase()} required />
+          </div>
+          {!selectedUser && <CInput label="Password" type="password" placeholder="••••••••" required icon={<Key className="w-4 h-4" />} />}
+        </div>
+      </CDialog>
+
+      {/* Role Modal */}
+      <CDialog
+        isOpen={isRoleModalOpen}
+        onClose={() => { setIsRoleModalOpen(false); setSelectedRole(null); }}
+        title={selectedRole ? "Edit Role Permissions" : "Create New Role"}
+        icon={selectedRole ? <Pencil className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+        buttons={[
+          { label: 'Cancel', onClick: () => { setIsRoleModalOpen(false); setSelectedRole(null); }, variant: 'outline' },
+          { label: selectedRole ? 'Save Changes' : 'Create Role', onClick: handleAddSubmit, variant: 'primary' },
+        ]}
+      >
+        <div className="space-y-4">
+          <CInput label="Role Name" placeholder="e.g. Senior Accountant" defaultValue={selectedRole?.name} required />
+          <CTextarea label="Description" placeholder="Define the responsibilities..." defaultValue={selectedRole?.description} rows={4} />
+        </div>
+      </CDialog>
+
+      {/* Action Bar */}
+      <CCard padding="none" className="overflow-hidden flex flex-col min-h-[650px] shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-white">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <CIconBadge
+                icon={activeTab === 'users' ? <Users className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                colorClass="bg-gray-100 text-text-muted"
+                shape="circle"
+                size="lg"
+              />
+              <CPageTitle>
+                {activeTab === 'users' ? 'Users' : 'Roles'}
+              </CPageTitle>
+            </div>
+
+            {/* Sub-Tabs */}
+            <div className="flex bg-gray-100 p-1 rounded-lg">
+              <button 
+                onClick={() => { setActiveTab('users'); setRowSelection({}); }}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-white shadow-sm text-primary' : 'text-text-muted hover:text-text-main'}`}
+              >
+                Users
+              </button>
+              <button 
+                onClick={() => { setActiveTab('roles'); setRowSelection({}); }}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === 'roles' ? 'bg-white shadow-sm text-primary' : 'text-text-muted hover:text-text-main'}`}
+              >
+                Roles
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <CButton
+              variant="outline"
+              size="sm"
+              icon={<Filter className="w-4 h-4" />}
+              onClick={() => setShowFilters(!showFilters)}
+              className={showFilters ? '!bg-primary-light !text-primary !border-primary/20 hover:!bg-primary-light/80' : ''}
+            >
+              <span className="hidden sm:inline">{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+            </CButton>
+
+            <CButton variant="outline" size="sm" icon={<RefreshCcw className="w-4 h-4" />} iconOnly />
+
+            <CDropdownMenu
+              label="Options"
+              align="right"
+              width="w-52"
+              groups={[
+                { items: [
+                  { label: 'Import Records', icon: <Upload className="w-4 h-4" /> },
+                  { label: 'Export to Excel', icon: <Download className="w-4 h-4" /> },
+                  { label: 'Export to PDF', icon: <FileText className="w-4 h-4" /> },
+                ]},
+                { items: [
+                  { label: 'Print List', icon: <Printer className="w-4 h-4" /> },
+                  { label: 'Duplicate', icon: <Copy className="w-4 h-4" /> },
+                  { label: 'Archive Selected', icon: <Archive className="w-4 h-4" /> },
+                ]},
+                { items: [
+                  { label: 'Column Settings', icon: <Settings2 className="w-4 h-4" /> },
+                ]},
+                { items: [
+                  { label: 'Delete Selected', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: handleBulkDelete },
+                ]},
+              ]}
+            />
+
+            <CButton
+              variant="primary"
+              size="md"
+              icon={<Plus className="w-4 h-4" />}
+              onClick={() => activeTab === 'users' ? setIsUserModalOpen(true) : setIsRoleModalOpen(true)}
+              className="ml-2"
+            >
+              Add {activeTab === 'users' ? 'User' : 'Role'}
+            </CButton>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex flex-1 overflow-hidden p-4 bg-white gap-0">
+          {showFilters && <CFilterSidebar groups={activeTab === 'users' ? userFilters : []} />}
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === 'users' ? (
+              <CDataTable 
+                data={MOCK_USERS} 
+                columns={userColumns} 
+                rowSelection={rowSelection} 
+                onRowSelectionChange={setRowSelection} 
+                onRowClick={(row) => handleEditUser(row as User)}
+              />
+            ) : (
+              <CDataTable 
+                data={MOCK_ROLES} 
+                columns={roleColumns} 
+                rowSelection={rowSelection} 
+                onRowSelectionChange={setRowSelection} 
+                onRowClick={(row) => handleEditRole(row as Role)}
+              />
+            )}
+          </div>
+        </div>
+      </CCard>
     </div>
   );
 }

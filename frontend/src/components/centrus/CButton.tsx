@@ -6,7 +6,7 @@ export type CButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 export interface CButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: CButtonVariant;
   size?: CButtonSize;
-  icon?: React.ReactNode;
+  icon?: React.ReactNode | React.ElementType;
   iconOnly?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -62,7 +62,13 @@ export default function CButton({
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
       ) : icon ? (
-        icon
+        React.isValidElement(icon) ? (
+          icon
+        ) : (
+          React.createElement(icon as React.ComponentType<any>, { 
+            className: iconOnly ? 'w-5 h-5' : 'w-4 h-4' 
+          })
+        )
       ) : null}
       {!iconOnly && children}
     </button>

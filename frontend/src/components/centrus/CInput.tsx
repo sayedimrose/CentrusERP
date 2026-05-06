@@ -10,9 +10,11 @@ export interface CInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   /** Whether the field is required (adds asterisk) */
   required?: boolean;
   /** Leading icon inside input */
-  leadingIcon?: React.ReactNode;
+  leadingIcon?: React.ReactNode | React.ElementType;
+  /** Alias for leadingIcon */
+  icon?: React.ReactNode | React.ElementType;
   /** Trailing icon inside input */
-  trailingIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode | React.ElementType;
   /** Full width */
   fullWidth?: boolean;
   /** Input size */
@@ -31,6 +33,7 @@ export default function CInput({
   error,
   required = false,
   leadingIcon,
+  icon,
   trailingIcon,
   fullWidth = true,
   inputSize = 'md',
@@ -39,6 +42,14 @@ export default function CInput({
   ...rest
 }: CInputProps) {
   const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  const finalLeadingIcon = leadingIcon || icon;
+
+  const renderIcon = (iconNode: React.ReactNode | React.ElementType) => {
+    if (!iconNode) return null;
+    if (React.isValidElement(iconNode)) return iconNode;
+    const IconComponent = iconNode as React.ElementType;
+    return <IconComponent className="w-4 h-4" />;
+  };
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
@@ -49,20 +60,20 @@ export default function CInput({
         </label>
       )}
       <div className="relative">
-        {leadingIcon && (
+        {finalLeadingIcon && (
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-            {leadingIcon}
+            {renderIcon(finalLeadingIcon)}
           </div>
         )}
         <input
           id={inputId}
           className={`
             block border border-border-subtle rounded-md leading-5
-            bg-gray-50 text-text-main placeholder-text-muted
+            bg-gray-50 text-text-main placeholder-text-placeholder font-medium
             focus:outline-none focus:bg-white focus:ring-[1.5px] focus:ring-inset focus:ring-primary focus:border-primary
             transition-all
             ${sizeClasses[inputSize]}
-            ${leadingIcon ? 'pl-10' : ''}
+            ${finalLeadingIcon ? 'pl-10' : ''}
             ${trailingIcon ? 'pr-10' : ''}
             ${error ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : ''}
             ${fullWidth ? 'w-full' : ''}
@@ -72,7 +83,7 @@ export default function CInput({
         />
         {trailingIcon && (
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted">
-            {trailingIcon}
+            {renderIcon(trailingIcon)}
           </div>
         )}
       </div>

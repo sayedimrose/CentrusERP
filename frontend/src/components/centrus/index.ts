@@ -37,6 +37,9 @@ export type { CDropdownMenuProps, CDropdownItem, CDropdownGroup } from './CDropd
 export { default as CDialog } from './CDialog';
 export type { CDialogProps, CDialogButton } from './CDialog';
 
+export { default as CPageTitle } from './CPageTitle';
+export type { CPageTitleProps } from './CPageTitle';
+
 export { default as CSectionHeader } from './CSectionHeader';
 export type { CSectionHeaderProps } from './CSectionHeader';
 
@@ -48,3 +51,10 @@ export type { CActivityItemProps } from './CActivityItem';
 
 export { default as CBarChart } from './CBarChart';
 export type { CBarChartProps, CBarChartDataPoint, CBarChartLegendItem } from './CBarChart';
+
+export { default as CToast, useToasts } from './CToast';
+export type { Toast, ToastType } from './CToast';
+
+export { default as CDataTable } from './CDataTable';
+export { default as CFilterSidebar } from './CFilterSidebar';
+export type { FilterGroup, FilterOption } from './CFilterSidebar';

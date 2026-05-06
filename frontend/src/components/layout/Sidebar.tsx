@@ -138,7 +138,6 @@ const navItems = [
       { name: 'Payment Modes', href: '/settings/payments' },
       { name: 'Hardware Devices', href: '/settings/hardware' },
       { name: 'ZATCA Phase 2', href: '/settings/zatca' },
-      { name: 'General Preferences', href: '/settings/preferences' },
     ],
   },
 ];
